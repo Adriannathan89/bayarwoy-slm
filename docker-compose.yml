@@ -1,6 +1,7 @@
 services:
   app:
     image: ${APP_IMAGE:-ghcr.io/placeholder/bayarwoy-slm:latest}
+    container_name: bayarwoy-slm
     ports:
       - "${PORT:-8001}:8001"
     environment:
@@ -14,6 +15,12 @@ services:
       timeout: 10s
       retries: 3
       start_period: 10s
+    networks:
+      - bayarwoy-net
 
 volumes:
   slm_feedback:
+
+networks:
+  bayarwoy-net:
+    external: true
