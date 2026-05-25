@@ -1,0 +1,19 @@
+services:
+  app:
+    image: ${APP_IMAGE:-ghcr.io/placeholder/bayarwoy-slm:latest}
+    ports:
+      - "${PORT:-8001}:8001"
+    environment:
+      - FEEDBACK_DIR=/feedback
+    volumes:
+      - slm_feedback:/feedback
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  slm_feedback:

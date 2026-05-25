@@ -1,0 +1,112 @@
+name: Python CI
+
+on:
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        run: docker build -t bayarwoy-slm-ci .
+
+      - name: Start container
+        run: |
+          docker run -d \
+            --name slm-test \
+            -p 8001:8001 \
+            bayarwoy-slm-ci
+
+      - name: Wait for service to be ready
+        run: |
+          for i in {1..20}; do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8001/health)
+            if [ "$STATUS" = "200" ]; then
+              echo "Service ready"
+              exit 0
+            fi
+            echo "Waiting... ($i/20)"
+            sleep 3
+          done
+          echo "Service did not become ready"
+          docker logs slm-test
+          exit 1
+
+      - name: Test /health endpoint
+        run: |
+          RESP=$(curl -s http://localhost:8001/health)
+          echo "$RESP"
+          echo "$RESP" | python3 -c "
+          import sys, json
+          data = json.load(sys.stdin)
+          assert data['status'] == 'ok', 'status bukan ok'
+          assert data['model_loaded'] == True, 'model tidak ter-load'
+          assert len(data['categories']) == 9, 'jumlah kategori salah'
+          print('health check passed')
+          "
+
+      - name: Test /classify endpoint
+        run: |
+          CASES='[
+            {"title": "makan siang", "expected": "makanan"},
+            {"title": "grab motor", "expected": "transport"},
+            {"title": "bayar listrik", "expected": "tagihan"},
+            {"title": "beli baju shopee", "expected": "belanja"},
+            {"title": "nonton netflix", "expected": "hiburan"},
+            {"title": "beli obat apotek", "expected": "kesehatan"},
+            {"title": "kopi susu kenangan", "expected": "minuman"},
+            {"title": "gaji bulanan januari", "expected": "gaji"},
+            {"title": "hadiah dari orang tua", "expected": "hadiah"}
+          ]'
+          echo "$CASES" | python3 -c "
+          import sys, json, urllib.request
+
+          cases = json.load(sys.stdin)
+          failed = []
+          for c in cases:
+              req = urllib.request.Request(
+                  'http://localhost:8001/classify',
+                  data=json.dumps({'title': c['title']}).encode(),
+                  headers={'Content-Type': 'application/json'},
+              )
+              resp = json.loads(urllib.request.urlopen(req).read())
+              ok = resp['category'] == c['expected']
+              status = 'PASS' if ok else 'FAIL'
+              print(f\"  [{status}] '{c['title']}' → {resp['category']} (expected: {c['expected']}, conf: {resp['confidence']:.0%})\")
+              if not ok:
+                  failed.append(c['title'])
+          if failed:
+              print(f\"FAILED: {failed}\")
+              sys.exit(1)
+          print('All classify tests passed')
+          "
+
+      - name: Test /classify/batch endpoint
+        run: |
+          RESP=$(curl -s -X POST http://localhost:8001/classify/batch \
+            -H "Content-Type: application/json" \
+            -d '{"titles": ["makan bakso", "isi bensin", "bayar wifi"]}')
+          echo "$RESP"
+          echo "$RESP" | python3 -c "
+          import sys, json
+          data = json.load(sys.stdin)
+          assert len(data['results']) == 3, 'jumlah hasil batch salah'
+          print('batch test passed')
+          "
+
+      - name: Show logs on failure
+        if: failure()
+        run: docker logs slm-test
+
+      - name: Teardown
+        if: always()
+        run: docker rm -f slm-test
