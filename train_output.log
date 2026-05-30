@@ -1,0 +1,61 @@
+Memuat dataset dari /home/ryynn/Desktop/Bayarwoy/bayarwoy-slm/data/transactions_v5_clean.csv...
+Total sampel: 14945
+
+Distribusi PRIMARY (9 kelas):
+  belanja           : 1918
+  gaji              : 1348
+  hadiah            : 1630
+  hiburan           : 1792
+  kesehatan         : 1470
+  makanan           : 1294
+  minuman           : 1109
+  tagihan           : 2901
+  transport         : 1483
+
+Distribusi SECONDARY (42 kelas):
+  aktivitas           : 297
+  apotek              : 295
+  asuransi            : 286
+  belanja             : 288
+  bonus               : 293
+  elektronik          : 305
+  fashion             : 306
+  gaji                : 536
+  gaji_pihak3         : 511
+  game                : 294
+  hadiah              : 460
+  harian              : 420
+  hiburan             : 291
+  internet_pulsa      : 294
+  iuran               : 276
+  jajanan             : 858
+  kado                : 286
+  kecantikan          : 298
+  kesehatan           : 275
+  komisi              : 519
+  konsul              : 299
+  kredit              : 283
+  liburan             : 303
+  makanan             : 1129
+  minuman             : 416
+  obat                : 299
+  online              : 298
+  online_shop         : 301
+  pemberian_masuk     : 301
+  pesawat             : 296
+  pribadi             : 296
+  prosedur            : 302
+  reward              : 294
+  sewa                : 270
+  streaming           : 304
+  sumbangan           : 18
+  tagihan             : 685
+  tontonan            : 303
+  transport           : 292
+  umum                : 301
+  undian              : 289
+  utilitas            : 278
+
+============================================================
+Training TransactionModel (5-fold CV)...
+============================================================
